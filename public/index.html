@@ -4,19 +4,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no">
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-title" content="Cboard">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-
-  <!--
-      crowdin.com in-context localization
-      See https://support.crowdin.com/in-context-localization/
-    -->
-  <script>
-    var _jipt = [];
-    _jipt.push(['project', 'cboard']);
-  </script>
-  <script src="//cdn.crowdin.com/jipt/jipt.js"></script>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'
+        'unsafe-inline'
+        'unsafe-eval'
+        http://localhost:3000/
+        http://localhost:10010/
+        https://*.app.cboard.io/
+        https://*.app.qa.cboard.io/
+        https://www.google-analytics.com/
+        https://www.google.com/ads/
+        https://www.google.com.ar/ads/
+        https://stats.g.doubleclick.net/
+        https://*.blob.core.windows.net/
+        https://*.madaportal.org/tawasol/
+        https://madaportal.org/tawasol/
+        https://*.arasaac.org/
+        https://globalsymbols.com/
+        https://www.googletagmanager.com/
+        https://ssl.gstatic.com
+        https://www.youtube.com/
+        https://*.cloudfront.net/
+        https://*.visualstudio.com/
+        https://*.microsoft.com/cognitiveservices/
+        wss://*.microsoft.com/cognitiveservices/
+        blob: 
+        gap:
+        data:;
+    img-src * data:  filesystem:  blob:  ;
+    ">
 
   <!--
       manifest.json provides metadata used when your web app is added to the
@@ -33,6 +49,33 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
+
+  <!-- Add to homescreen for Chrome on Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Cboard">
+  <link rel="icon" sizes="192x192" href="%PUBLIC_URL%/images/touch/chrome-touch-icon-192x192.png">
+
+  <!-- Add to homescreen for Safari on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Cboard">
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/images/touch/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/images/touch/touch-icon-iphone-retina.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="%PUBLIC_URL%/images/touch/touch-icon-ipad-retina.png">
+
+  <!-- Color the status bar on mobile devices -->
+  <meta name="theme-color" content="#000000">
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-108091601-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'UA-108091601-1');
+  </script>
+
   <title>Cboard - AAC Communication Board</title>
 </head>
 

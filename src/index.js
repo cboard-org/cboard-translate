@@ -1,43 +1,68 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import 'fontsource-roboto';
 import { Provider } from 'react-redux';
-import { MuiThemeProvider } from 'material-ui/styles';
-// import 'typeface-roboto';
-import speech from './speech';
-import LanguageProvider from './containers/LanguageProvider';
-import { changeLocale } from './containers/LanguageProvider/actions';
-import { getStore } from './store';
-import registerServiceWorker from './registerServiceWorker';
-import App from './containers/App';
+import { BrowserRouter, HashRouter, Route } from 'react-router-dom';
+import { TouchBackend } from 'react-dnd-touch-backend';
+import { DndProvider } from 'react-dnd';
+import { PersistGate } from 'redux-persist/es/integration/react';
+
+import App from './components/App';
+import { isCordova, onCordovaReady, initCordovaPlugins } from './cordova-util';
 import './index.css';
+import './polyfills';
+import './env';
+import LanguageProvider from './providers/LanguageProvider';
+import SpeechProvider from './providers/SpeechProvider';
+import ThemeProvider from './providers/ThemeProvider';
+import configureStore, { getStore } from './store';
+import { ApplicationInsights } from '@microsoft/applicationinsights-web';
+import { AZURE_INST_KEY } from './constants';
 
-async function init() {
-  const store = await getStore();
-  const state = store.getState();
-  speech.getLocales().then(locales => {
-    if (!state.language.locale) {
-      const navigatorLocale = navigator.languages[0].slice(0, 2);
-      let locale;
-
-      if (locales.includes(navigatorLocale)) {
-        locale = navigatorLocale;
-      } else {
-        locale = 'en';
-      }
-      // locale = 'zu';
-      store.dispatch(changeLocale(locale));
+if (AZURE_INST_KEY) {
+  const appInsights = new ApplicationInsights({
+    config: {
+      instrumentationKey: AZURE_INST_KEY,
+      enableAutoRouteTracking: true,
+      loggingLevelTelemetry: 2
     }
-
-    ReactDOM.render(
-        <Provider store={store}>
-          <LanguageProvider>
-            <App />
-          </LanguageProvider>
-        </Provider>,
-      document.getElementById('root')
-    );
   });
+  appInsights.loadAppInsights();
+  appInsights.trackPageView(); // Manually call trackPageView to establish the current user/session/pageview
 }
+const { persistor } = configureStore();
+const store = getStore();
+const dndOptions = {
+  enableTouchEvents: true,
+  enableMouseEvents: true,
+  enableKeyboardEvents: true
+};
 
-init();
-// registerServiceWorker();
+// When running in Cordova, must use the HashRouter
+const PlatformRouter = isCordova() ? HashRouter : BrowserRouter;
+
+const renderApp = () => {
+  if (isCordova()) {
+    initCordovaPlugins();
+  }
+  ReactDOM.render(
+    <Provider store={store}>
+      <PersistGate persistor={persistor}>
+        <SpeechProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <PlatformRouter>
+                <DndProvider backend={TouchBackend} options={dndOptions}>
+                  <Route path="/" component={App} />
+                </DndProvider>
+              </PlatformRouter>
+            </ThemeProvider>
+          </LanguageProvider>
+        </SpeechProvider>
+      </PersistGate>
+    </Provider>,
+    document.getElementById('root')
+  );
+};
+
+isCordova() ? onCordovaReady(renderApp) : renderApp();
