@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { injectIntl, intlShape } from 'react-intl';
+import { BrowserRouter } from 'react-router-dom';
 
 import registerServiceWorker from '../../registerServiceWorker';
 import { showNotification } from '../Notifications/Notifications.actions';
@@ -70,13 +71,15 @@ export class AppContainer extends Component {
     htmlElement.className = classes.join(' ');
 
     return (
-      <App
-        dir={dir}
-        isFirstVisit={isFirstVisit}
-        isLogged={isLogged}
-        lang={lang}
-        dark={displaySettings.darkThemeActive}
-      />
+      <BrowserRouter basename="/cboard-translate">
+        <App
+          dir={dir}
+          isFirstVisit={isFirstVisit}
+          isLogged={isLogged}
+          lang={lang}
+          dark={displaySettings.darkThemeActive}
+        />
+      </BrowserRouter>
     );
   }
 }

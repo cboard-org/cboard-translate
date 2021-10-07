@@ -25,7 +25,7 @@ function Symbol(props) {
   const image =
     isCordova() && props.image && props.image.search('/') === 0
       ? `.${props.image}`
-      : props.image;
+      : '/cboard-translate' + props.image;
 
   const symbolClassName = classNames('Symbol', className);
 

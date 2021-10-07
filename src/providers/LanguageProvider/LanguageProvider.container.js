@@ -33,7 +33,7 @@ export class LanguageProvider extends Component {
     const { lang } = this.props;
 
     if (lang) {
-      this.fetchMessages(lang);
+      this.fetchMessages('zu-ZA');
     } else {
       this.fetchMessages(DEFAULT_LANG);
     }
@@ -43,7 +43,7 @@ export class LanguageProvider extends Component {
     const { lang } = nextProps;
 
     if (lang) {
-      this.fetchMessages(lang);
+      this.fetchMessages('zu-ZA');
     }
   }
 
