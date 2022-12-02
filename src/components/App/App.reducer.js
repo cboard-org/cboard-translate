@@ -5,13 +5,17 @@ import {
   UPDATE_NAVIGATION_SETTINGS,
   UPDATE_USER_DATA,
   DISABLE_TOUR,
-  ENABLE_ALL_TOURS
+  ENABLE_ALL_TOURS,
+  SET_UNLOGGED_USER_LOCATION
 } from './App.constants';
 import { LOGIN_SUCCESS, LOGOUT } from '../Account/Login/Login.constants';
 import {
   DISPLAY_SIZE_STANDARD,
   LABEL_POSITION_BELOW
 } from '../Settings/Display/Display.constants';
+
+import { DEFAULT_FONT_FAMILY } from './../../providers/ThemeProvider/ThemeProvider.constants';
+import { NAVIGATION_BUTTONS_STYLE_SIDES } from '../Settings/Navigation/Navigation.constants';
 
 const initialState = {
   isConnected: true,
@@ -29,18 +33,23 @@ const initialState = {
   },
   displaySettings: {
     uiSize: DISPLAY_SIZE_STANDARD,
+    fontFamily: DEFAULT_FONT_FAMILY,
     fontSize: DISPLAY_SIZE_STANDARD,
     hideOutputActive: false,
+    increaseOutputButtons: false,
     labelPosition: LABEL_POSITION_BELOW,
     darkThemeActive: false
   },
   navigationSettings: {
     active: false,
     shareShowActive: false,
+    bigScrollButtonsActive: false,
+    navigationButtonsStyle: NAVIGATION_BUTTONS_STYLE_SIDES,
     caBackButtonActive: false,
     quickUnlockActive: false,
     removeOutputActive: false,
-    vocalizeFolders: false
+    vocalizeFolders: false,
+    liveMode: false
   },
   userData: {}
 };
@@ -130,6 +139,11 @@ function appReducer(state = initialState, action) {
       return {
         ...state,
         userData: action.userData
+      };
+    case SET_UNLOGGED_USER_LOCATION:
+      return {
+        ...state,
+        unloggedUserLocation: action.location
       };
     default:
       return state;

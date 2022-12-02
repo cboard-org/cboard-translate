@@ -26,12 +26,15 @@ import NavigationButtons from '../NavigationButtons';
 import EditGridButtons from '../EditGridButtons';
 import { DEFAULT_ROWS_NUMBER, DEFAULT_COLUMNS_NUMBER } from './Board.constants';
 
-import Joyride, { STATUS } from 'react-joyride';
+import { Link } from 'react-router-dom';
 
 import messages from './Board.messages';
-import { FormattedMessage } from 'react-intl';
 
 import './Board.css';
+import BoardTour from './BoardTour/BoardTour';
+import ScrollButtons from '../ScrollButtons';
+import { NAVIGATION_BUTTONS_STYLE_SIDES } from '../Settings/Navigation/Navigation.constants';
+
 export class Board extends Component {
   static propTypes = {
     board: PropTypes.shape({
@@ -93,7 +96,11 @@ export class Board extends Component {
     onLayoutChange: PropTypes.func,
     isRootBoardTourEnabled: PropTypes.bool,
     isUnlockedTourEnabled: PropTypes.bool,
-    disableTour: PropTypes.func
+    disableTour: PropTypes.func,
+    copiedTiles: PropTypes.arrayOf(PropTypes.object),
+    setIsScroll: PropTypes.func,
+    isScroll: PropTypes.bool,
+    totalRows: PropTypes.number
   };
 
   static defaultProps = {
@@ -117,68 +124,10 @@ export class Board extends Component {
       openTitleDialog: false,
       titleDialogValue: props.board && props.board.name ? props.board.name : ''
     };
+
+    this.boardContainerRef = React.createRef();
+    this.fixedBoardContainerRef = React.createRef();
   }
-
-  unlockedHelpSteps = [
-    {
-      target: 'body',
-      placement: 'center',
-      hideCloseButton: true,
-      content: (
-        <h2>
-          <FormattedMessage {...messages.walkthroughStart} />
-        </h2>
-      )
-    },
-    {
-      hideCloseButton: true,
-      target: '.personal__account',
-      content: <FormattedMessage {...messages.walkthroughSignInUp} />
-    },
-    {
-      hideCloseButton: true,
-      target: '.edit__board__ride',
-      content: <FormattedMessage {...messages.walkthroughEditBoard} />
-    },
-    {
-      hideCloseButton: true,
-      target: '.EditToolbar__BoardTitle',
-      content: <FormattedMessage {...messages.walkthroughBoardName} />
-    },
-    {
-      hideCloseButton: true,
-      target: '.add__board__tile',
-      content: <FormattedMessage {...messages.walkthroughAddTile} />
-    },
-    {
-      hideCloseButton: true,
-      target: '.Communicator__title',
-      content: <FormattedMessage {...messages.walkthroughChangeBoard} />
-    },
-    {
-      hideCloseButton: true,
-      target: '.edit__communicator',
-      content: <FormattedMessage {...messages.walkthroughBuildCommunicator} />
-    }
-  ];
-
-  lockedHelpSteps = [
-    {
-      target: 'body',
-      placement: 'center',
-      hideCloseButton: true,
-      content: (
-        <h2>
-          <FormattedMessage {...messages.walkthroughWelcome} />
-        </h2>
-      )
-    },
-    {
-      hideCloseButton: true,
-      target: '.open__lock',
-      content: <FormattedMessage {...messages.walkthroughUnlock} />
-    }
-  ];
 
   componentDidMount() {
     if (this.props.scannerSettings.active) {
@@ -187,10 +136,13 @@ export class Board extends Component {
   }
 
   handleTileClick = tile => {
-    const { onTileClick } = this.props;
+    const { onTileClick, isSelecting } = this.props;
 
-    if (tile.loadBoard) {
-      this.tiles.scrollTop = 0;
+    if (tile.loadBoard && !isSelecting) {
+      const boardComponentRef = this.props.board.isFixed
+        ? 'fixedBoardContainerRef'
+        : 'boardContainerRef';
+      this[boardComponentRef].current.scrollTop = 0;
     }
     onTileClick(tile);
   };
@@ -355,23 +307,20 @@ export class Board extends Component {
       onLayoutChange,
       isRootBoardTourEnabled,
       isUnlockedTourEnabled,
-      disableTour
+      disableTour,
+      onCopyTiles,
+      onPasteTiles,
+      setIsScroll,
+      isScroll,
+      totalRows
     } = this.props;
 
     const tiles = this.renderTiles(board.tiles);
     const cols = DISPLAY_SIZE_GRID_COLS[this.props.displaySettings.uiSize];
     const isLoggedIn = !!userData.email;
-
-    const joyRideStyles = {
-      options: {
-        arrowColor: '#eee',
-        backgroundColor: '#eee',
-        primaryColor: '#aa00ff',
-        textColor: '#333',
-        width: 500,
-        zIndex: 1000
-      }
-    };
+    const isNavigationButtonsOnTheSide =
+      navigationSettings.navigationButtonsStyle ===
+      NAVIGATION_BUTTONS_STYLE_SIDES;
 
     return (
       <Scanner
@@ -385,56 +334,13 @@ export class Board extends Component {
             'is-locked': this.props.isLocked
           })}
         >
-          {isLocked && isRootBoardTourEnabled && (
-            <Joyride
-              callback={data => {
-                const { status } = data;
-                if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-                  if (isRootBoardTourEnabled) {
-                    disableTour({ isRootBoardTourEnabled: false });
-                  }
-                }
-              }}
-              steps={this.lockedHelpSteps}
-              continuous={true}
-              showSkipButton={true}
-              showProgress={true}
-              disableOverlayClose={true}
-              run={isRootBoardTourEnabled}
-              styles={joyRideStyles}
-              locale={{
-                last: <FormattedMessage {...messages.walkthroughEndTour} />,
-                skip: <FormattedMessage {...messages.walkthroughCloseTour} />,
-                next: <FormattedMessage {...messages.walkthroughNext} />,
-                back: <FormattedMessage {...messages.walkthroughBack} />
-              }}
-            />
-          )}
-          {!isLocked && isUnlockedTourEnabled && (
-            <Joyride
-              callback={data => {
-                const { status } = data;
-                if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-                  if (isUnlockedTourEnabled) {
-                    disableTour({ isUnlockedTourEnabled: false });
-                  }
-                }
-              }}
-              steps={this.unlockedHelpSteps}
-              continuous={true}
-              showSkipButton={true}
-              showProgress={true}
-              disableOverlayClose={true}
-              run={isUnlockedTourEnabled}
-              styles={joyRideStyles}
-              locale={{
-                last: <FormattedMessage {...messages.walkthroughEndTour} />,
-                skip: <FormattedMessage {...messages.walkthroughCloseTour} />,
-                next: <FormattedMessage {...messages.walkthroughNext} />,
-                back: <FormattedMessage {...messages.walkthroughBack} />
-              }}
-            />
-          )}
+          <BoardTour
+            isLocked={isLocked}
+            isRootBoardTourEnabled={isRootBoardTourEnabled}
+            isUnlockedTourEnabled={isUnlockedTourEnabled}
+            disableTour={disableTour}
+            intl
+          />
           <Scannable>
             <div
               className={classNames('Board__output', {
@@ -466,7 +372,21 @@ export class Board extends Component {
             </Alert>
           )}
           {offlineVoiceAlert && (
-            <Alert variant="filled" severity="warning">
+            <Alert
+              variant="filled"
+              severity="warning"
+              action={
+                <Button
+                  size="small"
+                  variant="outlined"
+                  style={{ color: 'white', borderColor: 'white' }}
+                  component={Link}
+                  to="/settings/speech"
+                >
+                  {intl.formatMessage(messages.offlineChangeVoice)}
+                </Button>
+              }
+            >
               {intl.formatMessage(messages.offlineVoiceAlert)}
             </Alert>
           )}
@@ -493,16 +413,30 @@ export class Board extends Component {
             onSelectClick={onSelectClick}
             selectedItemsCount={selectedTileIds.length}
             onBoardTypeChange={onBoardTypeChange}
+            onCopyTiles={onCopyTiles}
+            onPasteTiles={onPasteTiles}
+            copiedTiles={this.props.copiedTiles}
           />
 
           <Scannable>
             <div
               id="BoardTilesContainer"
-              className="Board__tiles"
+              className={classNames(
+                'Board__tiles',
+                {
+                  CABackButtonOnTheSides:
+                    navigationSettings.caBackButtonActive &&
+                    isNavigationButtonsOnTheSide &&
+                    !isSelecting
+                },
+                {
+                  ScrollButtonsOnTheSides:
+                    navigationSettings.bigScrollButtonsActive &&
+                    isNavigationButtonsOnTheSide
+                }
+              )}
               onKeyUp={this.handleBoardKeyUp}
-              ref={ref => {
-                this.tiles = ref;
-              }}
+              ref={this.boardContainerRef}
             >
               {!board.isFixed &&
                 (tiles.length ? (
@@ -511,6 +445,8 @@ export class Board extends Component {
                     edit={isSelecting && !isSaving}
                     cols={cols}
                     onLayoutChange={onLayoutChange}
+                    setIsScroll={setIsScroll}
+                    isBigScrollBtns={navigationSettings.bigScrollButtonsActive}
                   >
                     {tiles}
                   </Grid>
@@ -529,6 +465,10 @@ export class Board extends Component {
                   dragAndDropEnabled={isSelecting}
                   renderItem={item => this.renderTileFixedBoard(item)}
                   onItemDrop={onTileDrop}
+                  fixedRef={this.fixedBoardContainerRef}
+                  setIsScroll={setIsScroll}
+                  isBigScrollBtns={navigationSettings.bigScrollButtonsActive}
+                  isNavigationButtonsOnTheSide={isNavigationButtonsOnTheSide}
                 />
               )}
 
@@ -540,9 +480,34 @@ export class Board extends Component {
                 rows={board.grid ? board.grid.rows : DEFAULT_ROWS_NUMBER}
                 onAddRemoveRow={onAddRemoveRow}
                 onAddRemoveColumn={onAddRemoveColumn}
+                moveColsButtonToLeft={
+                  navigationSettings.bigScrollButtonsActive &&
+                  isNavigationButtonsOnTheSide
+                }
               />
             </div>
           </Scannable>
+
+          {navigationSettings.bigScrollButtonsActive && (
+            <ScrollButtons
+              active={
+                navigationSettings.bigScrollButtonsActive &&
+                !isSaving &&
+                !this.props.scannerSettings.active &&
+                (isScroll || isNavigationButtonsOnTheSide)
+              }
+              isScroll={isScroll}
+              isLocked={isLocked}
+              boardContainer={
+                board.isFixed
+                  ? this.fixedBoardContainerRef
+                  : this.boardContainerRef
+              }
+              totalRows={totalRows}
+              boardId={board.id}
+              isNavigationButtonsOnTheSide={isNavigationButtonsOnTheSide}
+            />
+          )}
 
           <NavigationButtons
             active={
@@ -554,6 +519,8 @@ export class Board extends Component {
             navHistory={this.props.navHistory}
             previousBoard={onRequestPreviousBoard}
             toRootBoard={onRequestToRootBoard}
+            isLocked={this.props.isLocked}
+            isNavigationButtonsOnTheSide={isNavigationButtonsOnTheSide}
           />
 
           <Dialog

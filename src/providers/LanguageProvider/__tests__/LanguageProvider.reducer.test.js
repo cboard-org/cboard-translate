@@ -10,7 +10,11 @@ describe('reducer', () => {
       lang: DEFAULT_LANG,
       dir: 'ltr',
       langs: [],
-      localLangs: []
+      localLangs: [],
+      langsFetched: false,
+      downloadingLang: {
+        isdownloading: false
+      }
     };
     mockLanguage = {
       lang: '',
@@ -38,6 +42,7 @@ describe('reducer', () => {
     };
     expect(languageProviderReducer(initialState, setLangs)).toEqual({
       ...initialState,
+      langsFetched: true,
       langs: ['de-DE', 'en-GB', 'en-US']
     });
   });

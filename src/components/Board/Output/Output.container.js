@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { injectIntl, intlShape } from 'react-intl';
 import { connect } from 'react-redux';
 import keycode from 'keycode';
+import shortid from 'shortid';
 import messages from '../Board.messages';
 import { showNotification } from '../../Notifications/Notifications.actions';
 import { isAndroid } from '../../../cordova-util';
@@ -12,7 +13,7 @@ import {
   speak
 } from '../../../providers/SpeechProvider/SpeechProvider.actions';
 
-import { changeOutput, clickOutput } from '../Board.actions';
+import { changeOutput, clickOutput, changeLiveMode } from '../Board.actions';
 import SymbolOutput from './SymbolOutput';
 
 function translateOutput(output, intl) {
@@ -76,25 +77,27 @@ export class OutputContainer extends Component {
   }
 
   clearOutput() {
-    const { changeOutput } = this.props;
+    const { changeOutput, isLiveMode } = this.props;
     const output = [];
-
-    changeOutput(output);
+    isLiveMode ? this.addLiveOutputTileClearOutput() : changeOutput(output);
   }
 
   popOutput() {
-    const { changeOutput } = this.props;
+    const { changeOutput, isLiveMode } = this.props;
     const output = [...this.props.output];
     output.pop();
-
-    changeOutput(output);
+    isLiveMode && output.length === 0
+      ? this.addLiveOutputTileClearOutput()
+      : changeOutput(output);
   }
 
   spliceOutput(index) {
-    const { changeOutput } = this.props;
+    const { changeOutput, isLiveMode } = this.props;
     const output = [...this.props.output];
     output.splice(index, 1);
-    changeOutput(output);
+    isLiveMode && output.length === 0
+      ? this.addLiveOutputTileClearOutput()
+      : changeOutput(output);
   }
   async speakOutput(text) {
     this.props.clickOutput(text.trim());
@@ -149,25 +152,29 @@ export class OutputContainer extends Component {
     }
   }
 
-  async play() {
-    const outputFrames = this.groupOutputByType();
+  async play(liveText = '') {
+    if (liveText) {
+      await this.speakOutput(liveText);
+    } else {
+      const outputFrames = this.groupOutputByType();
 
-    await this.asyncForEach(outputFrames, async frame => {
-      if (!frame[0].sound) {
-        const text = frame.reduce(this.outputReducer, '');
-        await this.speakOutput(text);
-      } else {
-        await new Promise(resolve => {
-          this.asyncForEach(frame, async ({ sound }, index) => {
-            await this.playAudio(sound);
+      await this.asyncForEach(outputFrames, async frame => {
+        if (!frame[0]?.sound) {
+          const text = frame.reduce(this.outputReducer, '');
+          await this.speakOutput(text);
+        } else {
+          await new Promise(resolve => {
+            this.asyncForEach(frame, async ({ sound }, index) => {
+              await this.playAudio(sound);
 
-            if (frame.length - 1 === index) {
-              resolve();
-            }
+              if (frame.length - 1 === index) {
+                resolve();
+              }
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    }
   }
 
   handleBackspaceClick = () => {
@@ -221,15 +228,67 @@ export class OutputContainer extends Component {
 
   handleOutputKeyDown = event => {
     if (event.keyCode === keycode('enter')) {
-      this.play();
+      const targetEl = event.target;
+      if (targetEl.tagName.toLowerCase() === 'div') {
+        this.play();
+      } else if (targetEl.tagName.toLowerCase() === 'textarea') {
+        this.play(event.target.value);
+        this.addLiveOutputTile();
+      }
     }
   };
 
+  defaultLiveTile = {
+    backgroundColor: 'rgb(255, 241, 118)',
+    image: '',
+    label: '',
+    labelKey: '',
+    type: 'live'
+  };
+
+  addLiveOutputTile() {
+    const { changeOutput } = this.props;
+    this.defaultLiveTile.id = shortid.generate();
+    changeOutput([...this.state.translatedOutput, this.defaultLiveTile]);
+  }
+
+  addLiveOutputTileClearOutput() {
+    const { changeOutput } = this.props;
+    this.setState({ translatedOutput: [] });
+    this.defaultLiveTile.id = shortid.generate();
+    changeOutput([this.defaultLiveTile]);
+  }
+
+  handleSwitchLiveMode = event => {
+    const { changeLiveMode, isLiveMode } = this.props;
+
+    if (!isLiveMode) {
+      this.addLiveOutputTile();
+    }
+    changeLiveMode();
+  };
+
+  handleWriteSymbol = index => event => {
+    const { changeOutput, intl } = this.props;
+    const output = [...this.props.output];
+    const newEl = {
+      ...output[index],
+      label: event.target.value
+    };
+    output.splice(index, 1, newEl);
+    changeOutput(output);
+    const translated = translateOutput(output, intl);
+    this.setState({ translatedOutput: translated });
+  };
+
   render() {
-    const { output, navigationSettings } = this.props;
-
+    const {
+      output,
+      navigationSettings,
+      isLiveMode,
+      increaseOutputButtons
+    } = this.props;
     const tabIndex = output.length ? '0' : '-1';
-
     return (
       <SymbolOutput
         onBackspaceClick={this.handleBackspaceClick}
@@ -238,10 +297,14 @@ export class OutputContainer extends Component {
         onRemoveClick={this.handleRemoveClick}
         onClick={this.handleOutputClick}
         onKeyDown={this.handleOutputKeyDown}
+        onSwitchLiveMode={this.handleSwitchLiveMode}
         symbols={this.state.translatedOutput}
+        isLiveMode={isLiveMode}
         tabIndex={tabIndex}
         navigationSettings={navigationSettings}
+        increaseOutputButtons={increaseOutputButtons}
         phrase={this.handlePhraseToShare()}
+        onWriteSymbol={this.handleWriteSymbol}
       />
     );
   }
@@ -250,7 +313,9 @@ export class OutputContainer extends Component {
 const mapStateToProps = ({ board, app }) => {
   return {
     output: board.output,
-    navigationSettings: app.navigationSettings
+    isLiveMode: board.isLiveMode,
+    navigationSettings: app.navigationSettings,
+    increaseOutputButtons: app.displaySettings.increaseOutputButtons
   };
 };
 
@@ -259,7 +324,8 @@ const mapDispatchToProps = {
   changeOutput,
   clickOutput,
   speak,
-  showNotification
+  showNotification,
+  changeLiveMode
 };
 
 export default connect(

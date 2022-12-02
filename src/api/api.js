@@ -5,7 +5,6 @@ import { alpha2ToAlpha3T } from '@cospired/i18n-iso-languages';
 import {
   API_URL,
   ARASAAC_BASE_PATH_API,
-  TAWASOL_BASE_PATH_API,
   GLOBALSYMBOLS_BASE_PATH_API,
   AZURE_VOICES_BASE_PATH_API,
   AZURE_SPEECH_SUBSCR_KEY
@@ -53,8 +52,16 @@ class API {
         ) {
           if (isAndroid()) {
             window.plugins.googleplus.disconnect(function(msg) {
-              console.log('disconnect msg' + msg);
+              console.log('disconnect google msg' + msg);
             });
+            window.facebookConnectPlugin.logout(
+              function(msg) {
+                console.log('disconnect facebook msg' + msg);
+              },
+              function(msg) {
+                console.log('error facebook disconnect msg' + msg);
+              }
+            );
           }
           getStore().dispatch(logout());
           history.push('/login-signup/');
@@ -107,17 +114,13 @@ class API {
       return [];
     }
   }
-
-  async tawasolPictogramsSearch(locale, searchText) {
-    const pictogSearchTextPath = `${TAWASOL_BASE_PATH_API}symbol/${searchText}`;
+  async arasaacPictogramsGetImageUrl(pictogGetTextPath) {
     try {
-      const { status, data } = await this.axiosInstance.get(
-        pictogSearchTextPath
-      );
-      if (status === 200) return data;
-      return [];
+      const { status, data } = await this.axiosInstance.get(pictogGetTextPath);
+      if (status === 200) return data.image;
+      return '';
     } catch (err) {
-      return [];
+      return '';
     }
   }
 
@@ -351,6 +354,14 @@ class API {
     return data;
   }
 
+  async boardReport(reportedBoardData) {
+    const { data } = await this.axiosInstance.post(
+      `/board/report`,
+      reportedBoardData
+    );
+    return data;
+  }
+
   async uploadFromDataURL(dataURL, filename, checkExtension = false) {
     const file = dataURLtoFile(dataURL, filename, checkExtension);
 
@@ -463,6 +474,11 @@ class API {
         headers
       }
     );
+    return data;
+  }
+
+  async getUserLocation() {
+    const { data } = await this.axiosInstance.get(`/location`);
     return data;
   }
 }

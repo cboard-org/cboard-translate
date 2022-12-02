@@ -9,6 +9,9 @@ export const isElectron = () =>
 export const onCordovaReady = onReady =>
   document.addEventListener('deviceready', onReady, false);
 
+export const onAndroidPause = onPause =>
+  document.addEventListener('pause', onPause, false);
+
 export const initCordovaPlugins = () => {
   console.log('now cordova is ready ');
   if (isCordova()) {
@@ -26,13 +29,39 @@ export const initCordovaPlugins = () => {
       window.AndroidFullScreen.immersiveMode(
         function successFunction() {},
         function errorFunction(error) {
-          console.error(error);
+          console.error(error.message);
         }
       );
     } catch (err) {
       console.log(err.message);
     }
+    try {
+      configFacebookPlugin();
+    } catch (err) {
+      console.log(err.message);
+    }
   }
+};
+
+const configFacebookPlugin = () => {
+  const FACEBOOK_APP_ID =
+    process.env.REACT_APP_FACEBOOK_APP_ID || '340205533290626';
+  const FACEBOOK_APP_NAME =
+    process.env.REACT_APP_FACEBOOK_APP_NAME || 'Cboard - Development';
+  window.facebookConnectPlugin.setApplicationId(
+    FACEBOOK_APP_ID,
+    function successFunction() {},
+    function errorFunction(error) {
+      console.error(error.message);
+    }
+  );
+  window.facebookConnectPlugin.setApplicationName(
+    FACEBOOK_APP_NAME,
+    function successFunction() {},
+    function errorFunction(error) {
+      console.error(error.message);
+    }
+  );
 };
 
 export const cvaTrackEvent = (category, action, label) => {
@@ -224,25 +253,25 @@ export const requestCvaPermissions = () => {
       }
     );
 
-    permissions.checkPermission(
-      permissions.CAMERA,
-      function(status) {
-        console.log('Has CAMERA:', status.hasPermission);
-        if (!status.hasPermission) {
-          permissions.requestPermission(
-            permissions.CAMERA,
-            function(status) {
-              console.log('success requesting CAMERA permission');
-            },
-            function(err) {
-              console.warn('No permissions granted for CAMERA');
-            }
-          );
-        }
-      },
-      function(err) {
-        console.log(err);
-      }
-    );
+    // permissions.checkPermission(
+    //   permissions.CAMERA,
+    //   function(status) {
+    //     console.log('Has CAMERA:', status.hasPermission);
+    //     if (!status.hasPermission) {
+    //       permissions.requestPermission(
+    //         permissions.CAMERA,
+    //         function(status) {
+    //           console.log('success requesting CAMERA permission');
+    //         },
+    //         function(err) {
+    //           console.warn('No permissions granted for CAMERA');
+    //         }
+    //       );
+    //     }
+    //   },
+    //   function(err) {
+    //     console.log(err);
+    //   }
+    // );
   }
 };

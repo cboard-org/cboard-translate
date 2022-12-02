@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { injectIntl, intlShape } from 'react-intl';
-import { BrowserRouter } from 'react-router-dom';
 
 import registerServiceWorker from '../../registerServiceWorker';
 import { showNotification } from '../Notifications/Notifications.actions';
@@ -11,6 +10,10 @@ import messages from './App.messages';
 import App from './App.component';
 import { DISPLAY_SIZE_STANDARD } from '../Settings/Display/Display.constants';
 
+import {
+  updateLoggedUserLocation,
+  updateUnloggedUserLocation
+} from '../App/App.actions';
 export class AppContainer extends Component {
   static propTypes = {
     /**
@@ -37,10 +40,23 @@ export class AppContainer extends Component {
   };
 
   componentDidMount() {
+    const localizeUser = () => {
+      const {
+        isLogged,
+        updateLoggedUserLocation,
+        updateUnloggedUserLocation
+      } = this.props;
+
+      if (isLogged) return updateLoggedUserLocation();
+      return updateUnloggedUserLocation();
+    };
+
     registerServiceWorker(
       this.handleNewContentAvailable,
       this.handleContentCached
     );
+
+    localizeUser();
   }
 
   handleNewContentAvailable = () => {
@@ -57,7 +73,14 @@ export class AppContainer extends Component {
   };
 
   render() {
-    const { dir, isFirstVisit, isLogged, lang, displaySettings } = this.props;
+    const {
+      dir,
+      isFirstVisit,
+      isLogged,
+      lang,
+      displaySettings,
+      isDownloadingLang
+    } = this.props;
 
     const uiSize = displaySettings.uiSize || DISPLAY_SIZE_STANDARD;
     const fontSize = displaySettings.fontSize || DISPLAY_SIZE_STANDARD;
@@ -71,15 +94,14 @@ export class AppContainer extends Component {
     htmlElement.className = classes.join(' ');
 
     return (
-      <BrowserRouter basename="/cboard-translate">
-        <App
-          dir={dir}
-          isFirstVisit={isFirstVisit}
-          isLogged={isLogged}
-          lang={lang}
-          dark={displaySettings.darkThemeActive}
-        />
-      </BrowserRouter>
+      <App
+        dir={dir}
+        isFirstVisit={isFirstVisit}
+        isLogged={isLogged}
+        lang={lang}
+        dark={displaySettings.darkThemeActive}
+        isDownloadingLang={isDownloadingLang}
+      />
     );
   }
 }
@@ -89,11 +111,14 @@ const mapStateToProps = state => ({
   isFirstVisit: isFirstVisit(state),
   isLogged: isLogged(state),
   lang: state.language.lang,
-  displaySettings: state.app.displaySettings
+  displaySettings: state.app.displaySettings,
+  isDownloadingLang: state.language.downloadingLang.isdownloading
 });
 
 const mapDispatchToProps = {
-  showNotification
+  showNotification,
+  updateLoggedUserLocation,
+  updateUnloggedUserLocation
 };
 
 export default connect(

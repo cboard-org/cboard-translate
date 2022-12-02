@@ -8,6 +8,8 @@ import {
 } from '../App.constants';
 import { LOGIN_SUCCESS, LOGOUT } from '../../Account/Login/Login.constants';
 import { DISPLAY_SIZE_STANDARD } from '../../Settings/Display/Display.constants';
+import { DEFAULT_FONT_FAMILY } from '../../../providers/ThemeProvider/ThemeProvider.constants';
+import { NAVIGATION_BUTTONS_STYLE_SIDES } from '../../Settings/Navigation/Navigation.constants';
 
 let mockApp, uData, initialState;
 
@@ -29,14 +31,19 @@ describe('reducer', () => {
       },
       displaySettings: {
         uiSize: DISPLAY_SIZE_STANDARD,
+        fontFamily: DEFAULT_FONT_FAMILY,
         fontSize: DISPLAY_SIZE_STANDARD,
         hideOutputActive: false,
+        increaseOutputButtons: false,
         labelPosition: 'Below',
         darkThemeActive: false
       },
       navigationSettings: {
         active: false,
+        bigScrollButtonsActive: false,
         caBackButtonActive: false,
+        navigationButtonsStyle: NAVIGATION_BUTTONS_STYLE_SIDES,
+        liveMode: false,
         shareShowActive: false,
         quickUnlockActive: false,
         removeOutputActive: false,
@@ -49,7 +56,9 @@ describe('reducer', () => {
       displaySettings: {
         uiSize: 'Standard',
         hideOutputActive: false,
+        increaseOutputButtons: false,
         labelPosition: 'Below',
+        fontFamily: DEFAULT_FONT_FAMILY,
         fontSize: 'Standard',
         darkThemeActive: false
       },
@@ -57,7 +66,10 @@ describe('reducer', () => {
       isFirstVisit: false,
       navigationSettings: {
         active: false,
+        bigScrollButtonsActive: false,
         caBackButtonActive: false,
+        navigationButtonsStyle: NAVIGATION_BUTTONS_STYLE_SIDES,
+        liveMode: false,
         shareShowActive: false,
         quickUnlockActive: false,
         removeOutputActive: false,
